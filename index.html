@@ -481,6 +481,7 @@ h1 span{
 /* remove blue focus outline on all buttons */
 .control:focus{outline:none;}
 .control:focus-visible{outline:2px solid rgba(255,122,0,.5);outline-offset:2px;}
+.control{-webkit-tap-highlight-color:transparent;tap-highlight-color:transparent;}
 
 /* song-info width set in .player-row above */
 
@@ -848,11 +849,14 @@ footer{
   </div>
 
 
-  <div
-    class="clock"
-    id="clock"
-  >
-    12:00
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="clock" id="listeners" style="display:none;">👥 <span id="listenerCount">1</span></div>
+    <div
+      class="clock"
+      id="clock"
+    >
+      12:00
+    </div>
   </div>
 
 </header>
@@ -1033,6 +1037,10 @@ footer{
   class="youtube-player"
   aria-hidden="true"
 ></div>
+
+<!-- Firebase (only loads if you set your config above) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 
 </div>
@@ -1231,6 +1239,8 @@ function createPlayer(){
         videoId:
           SONGS[currentIndex].id,
 
+
+        host:"https://www.youtube-nocookie.com",
 
         playerVars:{
 
@@ -1830,6 +1840,38 @@ setInterval(
   updateClock,
   1000
 );
+
+
+/* =========================================================
+   LIVE LISTENER COUNT  (Firebase Realtime DB — free tier)
+   Replace the firebaseConfig values with your own project.
+========================================================= */
+
+(function(){
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+    projectId:         "YOUR_PROJECT"
+  };
+
+  // bail out if placeholder not replaced
+  if(firebaseConfig.apiKey === "YOUR_API_KEY") return;
+
+  const app  = firebase.initializeApp(firebaseConfig);
+  const db   = firebase.database();
+  const ref  = db.ref("listeners");
+  const me   = ref.push();
+
+  me.set(true);
+  me.onDisconnect().remove();
+
+  ref.on("value", function(snap){
+    const count = snap.numChildren();
+    document.getElementById("listenerCount").textContent = count;
+    document.getElementById("listeners").style.display = count > 0 ? "" : "none";
+  });
+})();
 
 
 /* =========================================================
